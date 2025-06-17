@@ -10,8 +10,8 @@ export default async function sendVerification(
     try{
             
     const { data, error } = await resend.emails.send({
-      from: 'Acme <onboarding@resend.dev>',
-      to: email,
+      from: 'Mystery App <noreply@mysteryapp-pzxe.vercel.app>',
+      to: [email],
       subject: 'Mystery message | Verification Code',
       react: VerificationEmail({username,otp:verifyCode}),
     });
