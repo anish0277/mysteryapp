@@ -1,5 +1,9 @@
-import {z} from 'zod'
+import { z } from 'zod'
 
-export const messageSchema={
-    content:z.string().min(10,{message:'content must have min 10 characters'}).max(300,{message:'content cannot have more than 300 characters'})
-}
+export const messageSchema = z.object({
+    content: z.string()
+        .min(10, { message: 'Content must have at least 10 characters' })
+        .max(300, { message: 'Content cannot have more than 300 characters' })
+})
+
+export type MessageFormData = z.infer<typeof messageSchema>

@@ -18,10 +18,10 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
-  // Redirect unauthenticated users away from protected pages
-  if (!token && url.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/sign-in', request.url))
-  }
+  // // Redirect unauthenticated users away from protected pages
+  // if (!token && url.pathname.startsWith('/dashboard')) {
+  //   return NextResponse.redirect(new URL('/sign-in', request.url))
+  // }
 
   return NextResponse.next()
 }

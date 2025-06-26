@@ -1,16 +1,14 @@
-'use client'
+"use client"
+ 
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useEffect, useState } from "react"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-import {signInSchema} from '@/schemas/signInSchema'
+import {useDebounce} from '@uidotdev/usehooks'
+import {signUpSchema} from '@/schemas/signUpSchema'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
 import { toast } from "sonner"
-import {Library, Loader2} from 'lucide-react'
-import Link from "next/link"
-
-
 
 import {
   Form,
@@ -23,39 +21,61 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { signIn } from "next-auth/react"
-export default function SignInPage() {
-  const router = useRouter() 
-    type SignInFormData = z.infer<typeof signInSchema>
-    
+import {Library, Loader2} from 'lucide-react'
+import Link from "next/link"
+
+function page() {
+        
+    const router = useRouter() 
+    type SignUpFormData = z.infer<typeof signUpSchema>
+    const [username,setUsername]=useState('')
+    const [isCheckingUsername, setIsCheckingUsername] = useState(false)
+    const [usernameMessage, setUsernameMessage] = useState('')
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
+    const debounceUsername=useDebounce(username,300)
 
-    
-    const form = useForm<SignInFormData>({
-        resolver: zodResolver(signInSchema),
+    const checkUsernameUnique=async()=>{
+        if(debounceUsername){
+            setIsCheckingUsername(true)
+            setUsernameMessage('')
+            try{
+                const result = await axios.get(`/api/check-username-unique?username=${debounceUsername}`)  
+                console.log(result.data.message)           
+                setUsernameMessage(result.data.message)
+            }catch(error){
+            setUsernameMessage('Error checking username')
+            }finally {
+            setIsCheckingUsername(false) 
+        }
+        }
+    }
+
+    useEffect(()=>{
+        checkUsernameUnique()
+    },[debounceUsername])
+
+    const form = useForm<SignUpFormData>({
+        resolver: zodResolver(signUpSchema),
         defaultValues: {
-            identifier: '',
+            username: '',
+            email: '',
             password: ''
         }
     })
 
-    const onsubmit=async(data:SignInFormData)=>{
-      const Result=await signIn('credentials',{
-        redirect:false,
-        identifier:data.identifier,
-        password:data.password
-      }
-      )
-        if (Result?.ok) {
-        toast.success("Sign In successfully");
-        router.replace('/dashboard');
-        }else {
-        toast.error("Incorrect username/email or password");
-      }
-
+    const onsubmit=async(data:SignUpFormData)=>{
+        setIsSubmitting(true)
+        try{
+            const result=await axios.post('/api/sign-up',data)
+            router.replace(`/verify/${username}`)
+            toast.success(result.data.message) 
+        }catch(error){
+            toast.error('Something went wrong while submission of form. Try again')
+        }finally{
+            setIsSubmitting(false)
+        }
     }
-        
 
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
@@ -71,19 +91,58 @@ export default function SignInPage() {
           <div className="bg-white shadow-lg rounded-lg px-8 py-8 border border-gray-200">
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onsubmit)} className="space-y-6">
-                      
+                      <FormField
+                      control={form.control}
+                      name="username"
+                      render={({ field }) => (
+                      <FormItem>
+                      <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
+                           Username
+                      </FormLabel>
+                      <FormControl>
+                      <Input
+                     placeholder="Enter your username"
+                          {...field}
+                        onChange={(e) => {
+                        field.onChange(e)
+                        setUsername(e.target.value)
+                    }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"/>
+              </FormControl>
+                                        
+                      {/* Username Status */}
+                      {isCheckingUsername && (
+                      <div className="flex items-center space-x-2 mt-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-indigo-500" />
+                      <span className="text-sm text-gray-600">Checking username...</span>
+                    </div> )}
+                                        
+                    <FormDescription>
+                  {!isCheckingUsername && usernameMessage && (
+                    <span className={`text-sm mt-1 block ${
+                          usernameMessage === 'username is unique' 
+                          ? 'text-green-600' 
+                          : 'text-red-600'}`}>
+                        {usernameMessage}
+                    </span>
+                )}        
+                    </FormDescription>
+                    <FormMessage className="text-red-600 text-sm mt-1" />
+                          </FormItem>
+                            )}
+                            />
                           <FormField
                           control={form.control}
-                          name="identifier"
+                          name="email"
                           render={({ field }) => (
                           <FormItem>
                           <FormLabel className="block text-sm font-medium text-gray-700 mb-1">
-                                 Identifier
+                                 Email
                             </FormLabel>
                             <FormControl>
                             <Input 
-                            type="identifier"
-                            placeholder="Enter your Username or Email"
+                            type="email"
+                            placeholder="Enter your email"
                             {...field}
                             className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
                                />
@@ -146,12 +205,12 @@ export default function SignInPage() {
                             </div>
                         </div>
                         <p className="mt-4 text-sm text-gray-600">
-                          Don't have an account?{' '}
+                          Already a member?{' '}
                            <Link 
-                             href='/sign-up'
+                             href='/sign-in'
                             className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
                             >
-                                Sign Up
+                                Sign In
                             </Link>
                         </p>
                     </div>
@@ -159,5 +218,6 @@ export default function SignInPage() {
             </div>
         </div>
     )
-
 }
+
+export default page

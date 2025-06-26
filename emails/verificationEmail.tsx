@@ -37,7 +37,7 @@ export default function VerificationEmail({ username, otp }: VerificationEmailPr
           {otp}
         </Text>
         <Text style={{ fontSize: '14px', color: '#666', marginTop: '20px' }}>
-          This code will expire in 10 minutes. If you didn’t request this, you can safely ignore it.
+          This code will expire in 1 hr. If you didn’t request this, you can safely ignore it.
         </Text>
       </Section>
     </Html>

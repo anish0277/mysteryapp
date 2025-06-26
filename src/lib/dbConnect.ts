@@ -13,7 +13,6 @@ const connection:connectionObj={}
     }
     try{
         const db=await mongoose.connect(process.env.MONGO_URL || '')
-        console.log(db)
 
         connection.isconnected=db.connections[0].readyState
 
