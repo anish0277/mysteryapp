@@ -19,7 +19,7 @@ export async function GET(request:Request){
             const usernameError=result.error.format().username?._errors||[]
             return Response.json({
                 success:false,
-                message:usernameError
+                message: usernameError.length > 0 ? usernameError[0] : "Invalid username format"
             },{
                 status:400
             })
